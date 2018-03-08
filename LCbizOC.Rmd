@@ -1,0 +1,75 @@
+---
+title: "Business Entities in Larimer County"
+author: "JBaker"
+date: "March 7, 2018"
+output: html_document
+---
+## Introduction
+The following is some analysis of businesses in Larimer County. All source data was obtained from a download from http://data.colorado.gov  The data set contains historical data and is quite large (1.7M records). The data set description can be found here: https://data.colorado.gov/Business/Business-Entities-in-Colorado/4ykn-tg5h 
+
+The basic workflow is: 
+
+* Pare down the data set to Larimer County only.
+* Select the years of interest
+* Summarize the business opens and closes for the year
+* Visualize the data
+
+### Data Intake
+
+```{r initialize, cache=TRUE}
+# Download the data using: https://data.colorado.gov/api/views/4ykn-tg5h/rows.csv?accessType=DOWNLOAD&api_foundry=true
+
+colclass <- c("numeric", "character", "character", "character", "factor", "factor", "character", 
+              "factor", "character", "character", "factor", "factor", "character", "factor",
+              "factor", "factor", "factor", "factor", "factor", "factor", "factor", "factor",
+              "factor", "factor", "factor", "factor", "factor", "factor", "factor", "factor",
+              "factor", "factor", "factor", "factor", "character") 
+
+CObiz <- read.csv("./Business_Entities_in_Colorado.csv", colClasses = colclass)
+
+LCzips <- c(80511, 80512, 80513, 80515, 80517, 80521, 80522, 80524, 80525, 80526, 80527, 80528, 80528, 80532, 80535, 80536, 80536, 80537, 80538, 80539, 80541, 80545, 80547, 80549)
+
+```
+
+## Transform and Cull the Data
+Select out the entries for zip codes corresponding to Larimer County.
+
+```{r cull, warning=FALSE}
+# Replace zipcodes of form #####-#### with just #####
+
+CObiz$principalzipcode <- as.numeric(sub("([0-9]+)-([0-9]+)", "\\1", CObiz$principalzipcode))
+LCbiz <- CObiz[which(CObiz$principalzipcode %in% LCzips), ]
+LCgoodstanding <- nrow(LCbiz[LCbiz$entitystatus == "Good Standing", ])
+```
+
+There are currently `r LCgoodstanding` Larimer County businesses with a "Good Standing" status.
+
+## Summarize the Entity Formation and Dissolution by Year
+
+```{r summarize, message=FALSE}
+LCsumm <- NULL
+for (i in seq(2000, 2017)) {
+        dissolve <- length(grep(as.character(i), LCbiz$entityname))
+        init <- length(grep(as.character(i), LCbiz$entityformdate))
+        LCsumm <- rbind(LCsumm,cbind(year = i, opens = init, closes = dissolve)) 
+}
+
+LCsumm <- as.data.frame(LCsumm)
+print(LCsumm)
+```
+
+## Visualize the Data
+The following creates an offline HTML page with the data.
+
+```{r plotit, message=FALSE}
+library(plotly)
+p <- plot_ly(LCsumm, x = ~year, y = ~opens, type='bar', name= "Openings") %>%
+        add_trace(y=~closes, name="Closings") %>%
+        layout(title = "Larimer County Business Opens/Closes", yaxis = list(title='Count'), barmode= 'group')
+print(p)
+```
+
+
+
+
+
