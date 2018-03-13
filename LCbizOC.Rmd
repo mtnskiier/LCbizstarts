@@ -49,7 +49,7 @@ There are currently `r LCgoodstanding` Larimer County businesses with a "Good St
 ```{r summarize, message=FALSE}
 LCsumm <- NULL
 for (i in seq(2000, 2017)) {
-        dissolve <- length(grep(as.character(i), LCbiz$entityname))
+        dissolve <- length(grep(as.character(i), LCbiz$entityname)) #entityname overloaded w/dissolution date
         init <- length(grep(as.character(i), LCbiz$entityformdate))
         LCsumm <- rbind(LCsumm,cbind(year = i, opens = init, closes = dissolve)) 
 }
